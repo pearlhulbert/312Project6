@@ -175,6 +175,28 @@ class TSPSolver:
 		algorithm</returns> 
 	'''
 		
+	def getNewPath( self ):
+		#greedy, default... generate a bunch of paths
+		pass
+
+	def checkFitness(self, path):
+		pass
+
+	def selectWhichToCombine(self, allPaths):
+		#keep top 3, match 50% of others together
+		pass
+
+	def crossOver(self, path1, path2):
+		#Mix two paths together
+		pass
+
+	def mutate(self, path):
+		#do some random swaps on the path
+		pass
+
+
+
+		
 	def fancy( self,time_allowance=60.0 ):
 		pass
 		
