@@ -192,7 +192,13 @@ class TSPSolver:
 
 	def mutate(self, path):
 		#do some random swaps on the path
-		pass
+		index1 = random.randrange(len(path))
+		index2 = random.randrange(len(path))
+
+		temp = path[index1]
+		path[index1] = path[index2]
+		path[index2] = temp
+		return
 
 
 
