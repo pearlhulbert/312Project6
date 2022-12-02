@@ -80,9 +80,75 @@ class TSPSolver:
 		solution found, and three null values for fields not used for this 
 		algorithm</returns> 
 	'''
+   #does the greedy algorithm using each node as a starting point. 
+    #finds the shortest distance between each node not yet visited
+    #returns the shortest path found
+    def greedy( self,time_allowance=60.0 ):
+        results = {}
+        min_dist = math.inf
+        min_path = []
+        count = 0
+        city_indice = 0
 
-	def greedy( self,time_allowance=60.0 ):
-		pass
+        start_time = time.time()
+
+        while city_indice < len(self._scenario.getCities()) and time.time() - start_time < time_allowance:
+            #creates a copy of the cities that it can go to
+            cities = self._scenario.getCities().copy()
+            start_city = cities[city_indice]
+            curr_city = start_city
+            dist = 0
+            path = [cities.pop(city_indice)]
+
+            while True:
+                
+                min_index = 0
+                
+                #tries to find the shortest distance to the next node from the current one, that hasn't been visited yet
+                for i, val in enumerate(cities):
+                    if curr_city.costTo(val) < curr_city.costTo(cities[min_index]):
+                        min_index = i
+
+                #when all the cities have been visited, 
+                #make sure that there is a path back to the first node
+                #check if the bssf is any better and keep the path if it is
+
+                if len(cities) == 0:
+                    if curr_city.costTo(start_city) != math.inf:
+                        if dist < min_dist:
+                            min_dist = dist
+                            min_path = path.copy()
+
+                        count += 1
+                    city_indice += 1
+                    break
+
+                #returns if there are no available paths that this node can take
+                if curr_city.costTo(cities[min_index]) == math.inf:
+                    city_indice += 1
+                    break
+
+                #each city that had been visited by this iteration is removed from the city queue
+                dist += curr_city.costTo(cities[min_index])
+                curr_city = cities[min_index]
+                path.append(cities.pop(min_index))
+
+        solution = None
+        cost = math.inf
+        if len(min_path) > 0:
+            solution = TSPSolution(min_path)
+            cost = solution.cost
+        else:
+            count = 0
+
+        end_time = time.time()
+        results['cost'] = cost
+        results['time'] = end_time - start_time
+        results['count'] = count
+        results['soln'] = solution
+
+        
+        return results
 	
 	
 	
