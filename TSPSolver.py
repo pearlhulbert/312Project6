@@ -84,7 +84,6 @@ class TSPSolver:
     #finds the shortest distance between each node not yet visited
     #returns the shortest path found
     def greedy( self,time_allowance=60.0 ):
-        results = {}
         min_dist = math.inf
         min_path = []
         valid_paths = []
@@ -183,7 +182,7 @@ class TSPSolver:
         cities = self._scenario.getCities()
         
         for city_index in range(len(path) - 1):
-            fitness += cities[city_index].costTo(cities[city_index])
+            fitness += cities[path[city_index]].costTo(cities[path[city_index + 1]])
 
         return fitness
 
@@ -223,14 +222,10 @@ class TSPSolver:
         path[index2] = temp
         return
 
-
-
-        
     def fancy( self,time_allowance=60.0 ):
         paths = self.greedy(time_allowance)
         for p in paths:
             print(self.checkFitness(p))
-        pass
         
 
 
