@@ -192,10 +192,28 @@ class TSPSolver:
         pass
 
     def crossOver(self, path1, path2):
-        #Mix two paths together
-        pass
+        # Mix two paths together
+        best_path = []
+        sub_path1 = []
+        sub_path2 = []
 
-	def mutate(self, path):
+        a = int(random.random() * len(path1))
+        b = int(random.random() * len(path2))
+
+        start = min(a, b)
+        end = max(a, b)
+
+        for i in range(start, end):
+            sub_path1.append(path1[i])
+
+        sub_path2 = [index for index in path2 if index not in sub_path1]
+
+        best_path = sub_path1 + sub_path2
+
+        return best_path
+
+
+def mutate(self, path):
 		#do some random swaps on the path
 		index1 = random.randrange(len(path))
 		index2 = random.randrange(len(path))
