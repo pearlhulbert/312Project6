@@ -116,10 +116,11 @@ class TSPSolver:
 
                 if len(cities) == 0:
                     if curr_city.costTo(start_city) != math.inf:
-                        valid_paths.append(path.copy())
-                       #if dist < min_dist:
-                       #    min_dist = dist
-                       #    min_path = path.copy()
+                        new_path = []
+                        for city in path:
+                            new_path.append(city._index)
+
+                        valid_paths.append(new_path)
 
                         count += 1
                     city_indice += 1
@@ -178,7 +179,13 @@ class TSPSolver:
         pass
 
     def checkFitness(self, path):
-        pass
+        fitness = 0
+        cities = self._scenario.getCities()
+        
+        for city_index in range(len(path) - 1):
+            fitness += cities[city_index].costTo(cities[city_index])
+
+        return fitness
 
     def selectWhichToCombine(self, allPaths):
         #keep top 3, match 50% of others together
@@ -196,6 +203,9 @@ class TSPSolver:
 
         
     def fancy( self,time_allowance=60.0 ):
+        paths = self.greedy(time_allowance)
+        for p in paths:
+            print(self.checkFitness(p))
         pass
         
 
