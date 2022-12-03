@@ -186,9 +186,32 @@ class TSPSolver:
 
         return fitness
 
+    #Returns an array of paths, 0+1 should be combined, 2+3, 4+5 etc.
     def selectWhichToCombine(self, allPaths):
-        #keep top 3, match 50% of others together
-        pass
+        #keep top 1, and any that are within 50% of it
+        min = np.inf
+        max = 0
+        pathsToCombine = []
+        pathsToKeep = []
+        for path in allPaths:
+            dist = self.checkFitness(path)
+            if dist > max:
+                max = dist
+            if dist < min:
+                min = dist
+        for path in allPaths:
+            dist = self.checkFitness(path)
+            if dist < max - ((max-min)/2):
+                #Keep all that are 'good enough'
+                pathsToCombine.append(path)
+            if dist == max:
+                #Keep the best one 2 times, so that it will not be destroyed
+                pathsToKeep.append(path)    
+                pathsToKeep.append(path)
+            random.shuffle(pathsToCombine)
+        for path in pathsToCombine:
+            pathsToKeep.append(path)
+        return pathsToKeep
 
     def crossOver(self, path1, path2):
         # Mix two paths together
