@@ -16,6 +16,7 @@ import numpy as np
 from TSPClasses import *
 import heapq
 import itertools
+import random
 
 
 
@@ -143,7 +144,6 @@ class TSPSolver:
             count = 0
 
         end_time = time.time()
-        print(valid_paths)
 
         
         return valid_paths
@@ -173,9 +173,22 @@ class TSPSolver:
         algorithm</returns> 
     '''
         
-    def getNewPath( self ):
+    def generateStartingPopulation( self, time_allowance ):
         #greedy, default... generate a bunch of paths
-        pass
+        num_cities = len(self._scenario.getCities())
+        population_size = 100
+        starting_population = self.greedy(time_allowance)
+        num_population_to_create = population_size - len(starting_population)
+        
+        remaining_population = [[i for i in range(num_cities)] for _ in range(num_population_to_create)]
+
+        for path in remaining_population:
+            random.shuffle(path)
+
+        starting_population += remaining_population
+        return starting_population
+
+
 
     def checkFitness(self, path):
         fitness = 0
@@ -245,10 +258,17 @@ class TSPSolver:
         path[index2] = temp
         return
 
-    def fancy( self,time_allowance=60.0 ):
-        paths = self.greedy(time_allowance)
-        for p in paths:
-            print(self.checkFitness(p))
+    def fancy( self, time_allowance=60.0 ):
+        start_time = time.time()
+        population = self.generateStartingPopulation(time_allowance)
+
+        while start_time - time.time() < time_allowance:
+            #pick the best path
+            #select which to combine
+            #cross the ones that are the best
+            #mutate if selected
+            
+            pass
         
 
 
