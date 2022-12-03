@@ -17,6 +17,7 @@ from TSPClasses import *
 import heapq
 import itertools
 import random
+from copy import deepcopy
 
 
 
@@ -173,10 +174,9 @@ class TSPSolver:
         algorithm</returns> 
     '''
         
-    def generateStartingPopulation( self, time_allowance ):
+    def generateStartingPopulation( self, population_size, time_allowance ):
         #greedy, default... generate a bunch of paths
         num_cities = len(self._scenario.getCities())
-        population_size = 100
         starting_population = self.greedy(time_allowance)
         num_population_to_create = population_size - len(starting_population)
         
@@ -188,7 +188,18 @@ class TSPSolver:
         starting_population += remaining_population
         return starting_population
 
+    def pickBestPath(self, best_path, paths):
+        best_fitness = self.checkFitness(best_path)
+        #cities = self._scenario.getCities()
 
+        for path in paths:
+            #print(path)
+            new_fitness = self.checkFitness(path)
+            if new_fitness < best_fitness:
+                best_path = path
+                best_fitness = new_fitness
+
+        return deepcopy(best_path)
 
     def checkFitness(self, path):
         fitness = 0
@@ -197,7 +208,7 @@ class TSPSolver:
         for city_index in range(len(path) - 1):
             fitness += cities[path[city_index]].costTo(cities[path[city_index + 1]])
 
-        return fitness
+        return fitness ** 2
 
     #Returns an array of paths, 0+1 should be combined, 2+3, 4+5 etc.
     def selectWhichToCombine(self, allPaths):
@@ -247,6 +258,25 @@ class TSPSolver:
 
         return best_path
 
+    def crossPopulation(self, population, population_size):
+        #print(population[0])
+        new_population = []
+        new_population.append(population.pop(0))
+        
+
+        for path_index in range(0, len(population) - 2, 2):
+            if len(new_population) >= population_size:
+                break
+            new_population.append(self.crossOver(population[path_index], population[path_index + 1]))
+            new_population.append(self.crossOver(population[path_index + 1], population[path_index]))
+
+       #print(len(new_population[:population_size]))
+       #print(population)
+       #print(population[0])
+       #print(new_population[0])
+
+        return new_population[:population_size]
+
 
     def mutate(self, path):
         #do some random swaps on the path
@@ -259,16 +289,37 @@ class TSPSolver:
         return
 
     def fancy( self, time_allowance=60.0 ):
+        population_size = 10
+        cities = self._scenario.getCities()
         start_time = time.time()
-        population = self.generateStartingPopulation(time_allowance)
+        population = self.generateStartingPopulation(population_size, time_allowance)
+        best_path = deepcopy(population[0])
+        generations = 0
 
-        while start_time - time.time() < time_allowance:
-            #pick the best path
+        while time.time() - start_time < time_allowance:
+            print(time.time() - start_time)
+            best_path = self.pickBestPath(best_path, population)
+            combine_population = self.selectWhichToCombine(population)
+            population = self.crossPopulation(combine_population, population_size)
             #select which to combine
             #cross the ones that are the best
             #mutate if selected
+            generations += 1
             
-            pass
+
+        end_time = time.time()
+
+        city_path = []
+        for index in best_path:
+            city_path.append(cities[index])
+
+        solution = TSPSolution(city_path)
+        results = {}
+        results['time'] = end_time - start_time
+        results['soln'] = solution
+        results['cost'] = solution.cost
+        results['count'] = 0
+        return results
         
 
 
