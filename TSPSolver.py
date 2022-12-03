@@ -117,6 +117,10 @@ class TSPSolver:
 
                 if len(cities) == 0:
                     if curr_city.costTo(start_city) != math.inf:
+                        if dist < min_dist:
+                            min_dist = dist
+                            min_path = path.copy()
+
                         new_path = []
                         for city in path:
                             new_path.append(city._index)
@@ -136,7 +140,8 @@ class TSPSolver:
                 dist += curr_city.costTo(cities[min_index])
                 curr_city = cities[min_index]
                 path.append(cities.pop(min_index))
-
+        end_time = time.time() - start_time
+        solution = None
         cost = math.inf
         if len(min_path) > 0:
             solution = TSPSolution(min_path)
@@ -144,9 +149,10 @@ class TSPSolver:
         else:
             count = 0
 
-        end_time = time.time()
-
         
+        print("greedy bssf: ", cost)
+        print("greedy time: ", end_time)
+
         return valid_paths
     
     
@@ -259,9 +265,8 @@ class TSPSolver:
         return best_path
 
     def crossPopulation(self, population, population_size):
-        #print(population[0])
         new_population = []
-        new_population.append(population.pop(0))
+        new_population.append(deepcopy(population[0]))
         
 
         for path_index in range(0, len(population) - 2, 2):
@@ -269,11 +274,6 @@ class TSPSolver:
                 break
             new_population.append(self.crossOver(population[path_index], population[path_index + 1]))
             new_population.append(self.crossOver(population[path_index + 1], population[path_index]))
-
-       #print(len(new_population[:population_size]))
-       #print(population)
-       #print(population[0])
-       #print(new_population[0])
 
         return new_population[:population_size]
 
@@ -286,25 +286,28 @@ class TSPSolver:
         temp = path[index1]
         path[index1] = path[index2]
         path[index2] = temp
-        return
+        return path
+
+    def mutatePopulation(self, population, generation):
+        for path in population:
+            path = self.mutate(path)
+        return population
 
     def fancy( self, time_allowance=60.0 ):
-        population_size = 10
+        population_size = 100
         cities = self._scenario.getCities()
         start_time = time.time()
         population = self.generateStartingPopulation(population_size, time_allowance)
         best_path = deepcopy(population[0])
-        generations = 0
+        generation = 0
 
         while time.time() - start_time < time_allowance:
-            print(time.time() - start_time)
             best_path = self.pickBestPath(best_path, population)
             combine_population = self.selectWhichToCombine(population)
             population = self.crossPopulation(combine_population, population_size)
-            #select which to combine
-            #cross the ones that are the best
-            #mutate if selected
-            generations += 1
+            population = self.mutatePopulation(population, generation)
+
+            generation += 1
             
 
         end_time = time.time()
