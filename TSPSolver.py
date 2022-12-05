@@ -238,7 +238,7 @@ class TSPSolver:
                 #Keep the best one 2 times, so that it will not be destroyed
                 pathsToKeep.append(path)    
                 pathsToKeep.append(path)
-            random.shuffle(pathsToCombine)
+        random.shuffle(pathsToCombine)
         for path in pathsToCombine:
             pathsToKeep.append(path)
         return pathsToKeep
