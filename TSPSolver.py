@@ -152,22 +152,109 @@ class TSPSolver:
         
         print("greedy bssf: ", cost)
         print("greedy time: ", end_time)
+        results = {}
+        results['paths'] = valid_paths
+        results['city_path'] = solution
 
-        return valid_paths
+        return results
     
     
-    
-    ''' <summary>
-        This is the entry point for the branch-and-bound algorithm that you will implement
-        </summary>
-        <returns>results dictionary for GUI that contains three ints: cost of best solution, 
-        time spent to find best solution, total number solutions found during search (does
-        not include the initial BSSF), the best solution found, and three more ints: 
-        max queue size, total number of states created, and number of pruned states.</returns> 
-    '''
         
     def branchAndBound( self, time_allowance=60.0 ):
-        pass
+        
+        #initializes all the variables that we need to keep track of
+        total_pruned = 0
+        total_children = 0
+        max_children_size = 0
+        min_dist = math.inf
+        min_path = []
+        count_leaf = 0
+
+        cities = self._scenario.getCities()
+        start_matrix = []
+
+        start_time = time.time()
+        greedy_result = self.greedy(time_allowance)
+        bssf = greedy_result['city_path'].cost
+
+        #creaing the starting matrix
+        for _, val1 in enumerate(cities):
+            row = []
+            for _, val2 in enumerate(cities):
+                row.append(val1.costTo(val2))
+            start_matrix.append(row)
+        
+        #creating starting nodes matrix and reducing it
+        matrix = Matrix(start_matrix)
+        matrix.reduce_matrix()
+
+        #start of intelligent search
+        queue = []
+        head = Node(deepcopy(matrix), None, 0, [cities[0]])
+        start_node = head
+        
+        #loop that counts for time
+        while time.time() - start_time < time_allowance:
+            #creating children and adding them to the queue
+            #only iterates over the cities that aren't the start city
+            for i in range(1, len(cities)):
+                #doesn't try to compare the distance of a node to itself
+                if i == start_node.city_index:
+                    continue
+                
+                #creates child node, prunes the matrix, updates the bssf
+                child = Node(deepcopy(start_node.matrix), start_node.city_index, i, deepcopy(start_node.path))
+                child.path.append(cities[i])
+
+
+                #adds child to the queue if less than the bssf, prunes otherwise
+                if child.bssf <= bssf:
+                    heapq.heappush(queue, (child.bssf, child.city_index, child))
+                else:
+                    total_pruned += 1
+
+                total_children += 1
+            
+            #checking for an empty queue
+            if start_node is None or len(queue) == 0:
+                total_pruned += len(queue)
+                break
+            
+            #checks if all the cities have been visited up to the current node
+            #then checks if there is a path to the starting node
+            #if there is, then update the bssf and copy the path to get there
+            if len(start_node.path) >= len(cities):
+                if start_node.bssf != math.inf and start_node.bssf < min_dist:
+                    min_dist = start_node.bssf
+                    min_path = deepcopy(start_node.path)
+                    count_leaf += 1
+                    bssf = min_dist
+
+            max_children_size = max(max_children_size, len(queue))
+            heapq.heapify(queue)
+
+            #gets the next node out of the queue, breaks if there are no nodes that are better than the bssf
+            start_node = heapq.heappop(queue)[2]
+            if start_node.bssf > bssf:
+                total_pruned += len(queue)
+                break
+        
+        #gets time and creates results data structure
+        end_time = time.time()
+
+        solution = None
+        if len(min_path) > 0:
+            solution = TSPSolution(min_path)
+
+        results = {}
+        results['cost'] = bssf if solution is not None else 0
+        results['time'] = end_time - start_time
+        results['count'] = count_leaf
+        results['soln'] = solution
+        results['max'] = max_children_size
+        results['total'] = total_children
+        results['pruned'] = total_pruned
+        return results
 
 
 
@@ -183,7 +270,7 @@ class TSPSolver:
     def generateStartingPopulation( self, population_size, time_allowance ):
         #greedy, default... generate a bunch of paths
         num_cities = len(self._scenario.getCities())
-        starting_population = self.greedy(time_allowance)
+        starting_population = self.greedy(time_allowance)['paths']
         num_population_to_create = population_size - len(starting_population)
         
         remaining_population = [[i for i in range(num_cities)] for _ in range(num_population_to_create)]
@@ -214,7 +301,7 @@ class TSPSolver:
         for city_index in range(len(path) - 1):
             fitness += cities[path[city_index]].costTo(cities[path[city_index + 1]])
 
-        return fitness ** 2
+        return fitness
 
     #Returns an array of paths, 0+1 should be combined, 2+3, 4+5 etc.
     def selectWhichToCombine(self, allPaths):
@@ -308,6 +395,8 @@ class TSPSolver:
             population = self.mutatePopulation(population, generation)
 
             generation += 1
+            if generation >= 10000:
+                break
             
 
         end_time = time.time()
@@ -326,4 +415,72 @@ class TSPSolver:
         
 
 
+
+class Matrix:
+    def __init__(self, matrix):
+        self.bssf = 0
+        self.matrix = []
+        self.matrix = matrix
+
+    #finds the smallest number of each row and subtracts the each number from it
+    def reduce_matrix(self):
+        for i in range(len(self.matrix)):
+            #finds the smallest integer from the row
+            row_min = min(self.matrix[i])
+            if row_min == math.inf:
+                continue
+            self.bssf += row_min
+            #subtracts each item in that row by the minimum
+            self.matrix[i] = list(map(lambda x: x - row_min, self.matrix[i]))
+
+        self.reduce_columns()
+
+    def reduce_columns(self):
+        for i in range(len(self.matrix)):
+            #finds the smallest integer in each column
+            column_min = math.inf
+            for j in range(len(self.matrix[i])):
+                column_min = min(column_min, self.matrix[j][i])
+
+            #if there are no zeros in a column or the smallest integer is infinity,
+            #then subtract each item in the column by the smallest number
+            if column_min > 0 and column_min != math.inf:
+                for j in range(len(self.matrix[i])):
+                    self.matrix[j][i] -= column_min
+                self.bssf += column_min
+    
+    def mark_matrix(self, parent, child):
+        self.bssf += self.matrix[parent][child]
+
+        for i in range(len(self.matrix)):
+            self.matrix[parent][i] = math.inf
+
+        for i in range(len(self.matrix[0])):
+            self.matrix[i][child] = math.inf
+
+        self.matrix[child][parent] = math.inf
+        self.reduce_matrix()
+
+    def __str__(self):
+        out = ""
+        for s in self.matrix:
+            out += str(s) + "\n"
+        return out
+
+
+class Node:
+    def __init__(self, matrix, parent_index, city_index, path):
+        self.matrix = matrix
+        self.path = path
+        self.city_index = city_index
+        self.bssf = self._set_bssf(parent_index)
+
+    def _set_bssf(self, parent_index):
+        if parent_index is not None:
+            self.matrix.mark_matrix(parent_index, self.city_index)
+
+        return self.matrix.bssf
+
+    def __lt__(self, other):
+        return self.city_index < other.city_index
 
