@@ -155,7 +155,13 @@ class TSPSolver:
         results = {}
         results['paths'] = valid_paths
         results['city_path'] = solution
-
+        results['cost'] = cost        
+        results['time'] = end_time
+        results['count'] = count
+        results['soln'] = solution
+        results['max'] = None
+        results['total'] = None
+        results['pruned'] = None
         return results
     
     
